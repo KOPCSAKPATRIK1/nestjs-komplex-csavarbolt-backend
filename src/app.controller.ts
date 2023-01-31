@@ -1,8 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Post, Render } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Render,
+} from '@nestjs/common';
 import { get } from 'http';
 import { DataSource } from 'typeorm';
 import { AppService } from './app.service';
 import { Csavar } from './csavar.entity';
+import { Rendeles } from './rendeles.entity';
 
 @Controller()
 export class AppController {
@@ -19,20 +28,49 @@ export class AppController {
 
   @Get('api/csavarbolt')
   async listCsavar() {
-    const boltRepo = this.dataSource.getRepository(Csavar);
-    return await boltRepo.find();
+    const csavarRepo = this.dataSource.getRepository(Csavar);
+    return await csavarRepo.find();
   }
 
   @Post('api/csavarbolt')
   newCsavar(@Body() csavar: Csavar) {
     csavar.id = undefined;
-    const boltRepo = this.dataSource.getRepository(Csavar);
-    boltRepo.save(csavar);
+    const csavarRepo = this.dataSource.getRepository(Csavar);
+    csavarRepo.save(csavar);
   }
 
   @Delete('api/csavarbolt/:id')
   deleteCsavar(@Param('id') id: number) {
-    const boltRepo = this.dataSource.getRepository(Csavar);
-    boltRepo.delete(id);
+    const csavarRepo = this.dataSource.getRepository(Csavar);
+    csavarRepo.delete(id);
+  }
+
+  @Post('api/csavarbolt/:id/rendeles')
+  async rendelesCsavar(
+    @Body() rendeles: Rendeles,
+    @Param('id') csavarId: number,
+  ) {
+    const rendelesRepo = this.dataSource.getRepository(Rendeles);
+    rendeles.id = undefined;
+    rendeles.csavar_id = csavarId;
+
+    const csavarRepo = this.dataSource.getRepository(Csavar);
+    const rendeltCsavar = await csavarRepo.findOneBy({ id: csavarId });
+    rendeltCsavar.keszlet = rendeltCsavar.keszlet - rendeles.db;
+    console.log(rendeltCsavar.ar * rendeles.db);
+    csavarRepo.save(rendeltCsavar);
+    rendelesRepo.save(rendeles);
+  }
+
+  @Get('api/csavarbolt/rendeles')
+  async listRendeles() {
+    const rendelesRepo = this.dataSource.getRepository(Rendeles);
+    return await rendelesRepo.find();
+  }
+
+  @Delete('api/csavarbolt/rendeles/:id')
+  deleteRendeles(@Param('id') id: number) {
+    const rendelesRepo = this.dataSource.getRepository(Rendeles);
+    rendelesRepo.delete(id);
   }
 }
